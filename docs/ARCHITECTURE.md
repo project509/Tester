@@ -6,7 +6,7 @@ This document is the binding contract for every module. Implementers MUST expose
 ## 0. Golden rules
 
 1. **Vanilla ES2020 modules.** No frameworks, no runtime dependencies, no network, no image/font files. Everything is generated in code.
-2. **One entry:** `src/main.js`. esbuild bundles to a single IIFE inlined into `dist/index.html` (`node build.js`). CSS lives in `src/ui/styles.css` (inlined).
+2. `src/package.json` sets `"type":"module"` so node can `import()` any src module directly for tests. **One entry:** `src/main.js`. esbuild bundles to a single IIFE inlined into `dist/index.html` (`node build.js`). CSS lives in `src/ui/styles.css` (inlined).
 3. **Targets:** iOS Safari 15+, Android Chrome 90+. Portrait phones 320–480 css-px wide (also fine on tablets). 60 fps on a mid-range 2021 phone. Never allocate in hot loops; pool objects; cache every generated sprite.
 4. **No audio.** Feedback = haptics (`core/haptics.js`) + visuals.
 5. **Deterministic procedural generation:** everything random derives from `makeRng(seed)`. `Math.random()` is forbidden in `src/game/**` and `src/art/**` (use the rng passed in). Cosmetic-only randomness in render/particles may use a module-level rng.
