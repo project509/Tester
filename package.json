@@ -1,0 +1,19 @@
+{
+  "name": "holdout",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HOLDOUT — zombie fortress survival. Fallout Shelter meets DayZ. Portrait mobile, fully self-contained.",
+  "type": "commonjs",
+  "scripts": {
+    "build": "node build.js",
+    "build:dev": "node build.js --dev",
+    "serve": "node tools/serve.js",
+    "shot": "node tools/shot.js",
+    "test": "node tests/run.js",
+    "icons": "node tools/gen-icons.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "playwright-core": "^1.50.0"
+  }
+}
