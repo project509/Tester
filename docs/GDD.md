@@ -60,7 +60,7 @@ Eight floors, one room per floor. Floor 0 is always the **Gate**; Floor 7 is alw
 | Steady Hands | Search time −25 % | Refuses Gate/Watchtower duty |
 | Scrounger | +1 loot roll per container | Refuses Gate/Watchtower duty |
 | Heavy Foot | +2 pack slots | Screen entry Attention +6 instead of +3 |
-| Medic | Infirmary heal ×1.5 as a worker; cures at Infirmary T1; carries 3 Meds on a run for one field cure (a bite taken out there, cured on the spot) | −1 Grit |
+| Medic | As an Infirmary worker: heal ×1.5 and cures at T1; carries 3 Meds on a run for one field cure (a bite taken out there, cured on the spot) | −1 Grit |
 | Light Sleeper | HORDE_INCOMING fires 3 s early; +1 Aim at night | −2 Morale per day |
 | Iron Gut | Immune to Bad Water and Rats outcomes | −1 Nerve |
 | Coward | Sneak detection radius −25 % | Abandons defender slot when barricade < 25 % |
@@ -119,7 +119,7 @@ Heat zombies are 50 % the newest unlocked type and 50 % Shamblers, except that a
 |---|---|---|---|---|---|
 | Shambler | 15 | 1/12 | 2 per 1.5 s | The mass | Night 1 |
 | Runner | 10 | 1/5 | 2 per 1.0 s | Strikes a held Bracer instead of the wall | Heat ≥ 3 or Night 12+ |
-| Screamer | 12 | 1/10 | 0 | Stops at 55 % street — only a Rifle or a Watchtower Pistol reaches it, which is a reason to build the tower; every 6 s screams: Noise +15 | Night 3 |
+| Screamer | 12 | 1/10 | 0 | Stops at 55 % street (only a Rifle or a Watchtower Pistol reaches it: a reason to build the tower); screams every 6 s: Noise +15 | Night 3 |
 | Brute | 60 | 1/20 | 10 per 2 s | Stops at 40 % and roars 3 s: takes +100 % damage (ROAR); BRUTE_DOWN on death | Night 6 |
 | Bloater | 30 | 1/17 | 4 per 1 s | On death, a 3 s cloud 8 % of the street wide at its contact point: a held Bracer rolls infection 30 % | Night 9 |
 
@@ -147,7 +147,7 @@ One survivor, one zone, one thumb, 60–90 s. A zone is a linear side-scrolling 
 
 Each screen has 1–3 containers, 0–2 zombies (50 % asleep), and 20 % hold a **hazard**: a one-tile trigger (car alarm, dog, weak floor) worth Attention +12 (HAZARD); Nerve ≥ 6 shows its warning ring; crouching over it avoids a weak floor and halves an alarm or dog. Each zone reuses one kit of six generated props. One screen past the second holds a survivor to rescue (Forest 25 %, else 10 %).
 
-**Zone Select** shows the zone cards (modifier, unlock day; Cartographer adds screen and container counts), then a runner strip of eligible survivors with stat-fit glow: Fractured, refusing and patient survivors are excluded. The runner's room produces at ×0.5 today. They carry their equipped weapon and armor, 10 Ammo from stock (the unused comes home), up to 2 throwables from the Stash, and a Medic carries 3 Meds. The pack starts empty.
+**Zone Select** shows the zone cards (modifier, unlock day; Cartographer adds screen and container counts), then a runner strip of eligible survivors with stat-fit glow: Fractured, refusing and patient survivors are excluded. The runner's room produces at ×0.5 today. They carry their equipped weapon and armor, 10 Ammo from stock and up to 2 throwables from the Stash (the unused come home), and a Medic carries 3 Meds. The pack starts empty.
 
 **Verbs:** tap ground → walk. Tap a container → search: bar fills over `max(1.5, 3.0 − 0.15×hands)` s with SEARCH_LOOP; tap again cancels. Long-press → crouch toggle (half speed, half detection radius). Tap a zombie → attack with the equipped weapon: melee swings every 0.6 s (silent, Bat 12 / Machete 18, MELEE_HIT); a gun fires instantly at `0.45 + 0.05×aim`, 1 Ammo, Attention +10. A crouched melee tap on a sleeper is a **stealth kill**: instant, silent (LOOT_RARE) — the payoff that makes crouch and Nerve a build. Swipe up → throw a carried throwable where the swipe ends, with siege rules (Molotov Attention +10, Pipe Bomb +25, Flare pulls the screen's zombies to the spot). Swipe right → sprint to the next screen (Attention +2/s). **Swipe left → Extract** (EXTRACT_START).
 
@@ -193,7 +193,7 @@ One event fires at every Dawn Report from the first one (the morning after Night
 14. **Quiet Night** (Heat ≤ 2) — *Trust it* (tonight's horde ×0.5, played with the Dusk Prep defaults; all rooms ×1.25 today) / *Stand watch* (normal).
 15. **Fuel Truck** (Watchtower T2+) — send two named survivors: +30 Scrap, +10 Power today, both absent from tonight's siege.
 16. **The Wake** (a death yesterday) — *Hold a wake* (−3 Food, +8 Morale, dayNoise +1) / *No time* (−6 Morale).
-17. **The Cough** (Day 5+) — *Quarantine* (the named survivor is a patient today, output 0) / *Ignore* (risk 15 %: it was a bite, clock already at 24 h).
+17. **The Cough** (Day 5+) — *Quarantine* (the named survivor sits out the day: no work, no run) / *Ignore* (risk 15 %: it was a bite, clock already at 24 h).
 18. **Ghost on the Radio** (Radio T1+, a dead survivor; weight 4) — narrative: +5 Morale and a postscript on that obituary.
 
 **System lines** also appear in the Dawn Report: hidden bite noticed, confession, turn resolved, exile spotted in tonight's horde (Watchtower T2+), refused assignment and walk-outs (DENY), zone unlocked and act cards (UNLOCK), Familiar Face put to rest.
@@ -256,7 +256,7 @@ No leaderboards, no server; the share target is the group chat and the card read
 
 **Screens (17):** 1 Title → 2 New Run → 3 **Hold** → 4 Room Sheet → 5 Survivor Sheet → 6 Build Menu → 7 Zone Select → 8 **Scav Run** → 9 Scav Result → 10 Dusk Prep → 11 **Siege** → 12 Dawn Report → 13 Event Modal → 14 Obituary Card → 15 Run Summary → 16 Legacy → 17 Settings.
 
-- **1 Title:** CONTINUE (only with a live save), NEW RUN, DAILY, LEGACY, SETTINGS; the streak flame; the tower at dusk. A streak lost since the last visit plays the flame going out over "Night N is waiting". The first tap here is also the first vibrate call.
+- **1 Title:** CONTINUE (only with a live save), NEW RUN, DAILY, LEGACY, SETTINGS; the streak flame; the tower at dusk. A streak lost since the last visit plays the flame going out over "Night N is waiting".
 - **2 New Run:** seed field (random; typing one reproduces the run), mutator chips, owned-unlock toggle chips (default on), and the **Roster Draft**: six survivors from the `roster` stream, pick four, one REROLL of all six from `rosterReroll`; START. With a live save it first asks to abandon (§8).
 - **4 Room Sheet:** workers, tier, projected output with its real multiplier, UPGRADE, DEMOLISH (refund shown); the Radio sheet adds BROADCAST (once per day, disabled when the projected budget leaves it unpowered), REROLL at T2, TRADE while a Trader offer stands, and BUILD RADIO while the slot is empty.
 - **5 Survivor Sheet:** stats, traits (Grudge shows the rival's portrait), wounds with timers, the infection ring or ? ring, two gear slots that open a **Stash** strip, and CHECK / CURE / BANDAGE / MAKE PATIENT / PUT DOWN / EXILE. The Stash is unbounded, holds every unequipped weapon, armor and throwable, is also the Dusk Prep throwable tray, and never appears in the HUD; equipping swaps the old item back.
@@ -273,7 +273,7 @@ No leaderboards, no server; the share target is the group chat and the card read
 
 **The context button.** One large bottom button whose label is the day phase; time advances only through it: **START DAY N** → **SEND** (Zone Select) → **NIGHT** (Dusk Prep) → **HOLD THE GATE** → **START DAY N+1**. Variants: Storm Night SLEEP; Beacon nights HOLD (3), HOLD (2), LAST NIGHT; a breached start HOLD THE DOOR. Build, assign, craft and repair are free actions on the tower by day. The button doubles as the tutorial.
 
-**Hold gestures:** vertical drag scrolls the tower with a rubber-band at the roof (RATCHET); tap a room opens its sheet; tap a survivor opens theirs; long-press lifts a portrait, rooms glow by stat fit, drop assigns (patients drop back into the Infirmary). Sheets slide up in 220 ms and close on swipe-down. Two fingers are never required. **HUD:** one top bar with the six resources (delta arrow, red below one day of supply), Morale as a face, Heat as a red ring with its number, the Day counter; inset by the safe area.
+**Hold gestures:** vertical drag scrolls the tower with a rubber-band at the roof (RATCHET); tap a room opens its sheet; tap a survivor opens theirs; long-press lifts a portrait, rooms glow by stat fit, drop assigns; dragging a patient out of the Infirmary ends patient status (DENY while a cure is pending). Sheets slide up in 220 ms and close on swipe-down. Two fingers are never required. **HUD:** one top bar with the six resources (delta arrow, red below one day of supply), Morale as a face, Heat as a red ring with its number, the Day counter; inset by the safe area.
 
 **Transitions are camera moves, never cuts:** NIGHT triggers the 2-second warm→cold crossfade (DUSK_HINGE; the long form on Blood Moon and Beacon nights); Hold→Siege dollies down to the gate over 0.8 s; Hold→Scav pushes through the gate into the street (DOOR_SLAM); Siege→Dawn fades to bone-white and the report cards.
 
@@ -299,3 +299,97 @@ No leaderboards, no server; the share target is the group chat and the card read
 
 **Line budget (~15,000):** boot/save/RNG/input 900 · procedural art and font 2,000 · renderer and post 1,600 · Hold and economy 2,000 · survivors and infection 950 · siege 1,850 · scav 1,800 · events and Dawn Report 1,200 · Legacy, seeds, streak, daily 550 · share cards 600 · haptics 300 · screens and transitions 1,250.
 
+## 12. Haptic Vocabulary
+
+All patterns are `navigator.vibrate` millisecond arrays `[on, off, on…]`, scaled by the Settings intensity 0–1.5 (0 = shake only; any scaled "on" segment floors at 8 ms). Classes: *tick* (≤ 20 ms), *thud* (40–90 ms), *tone* (≥ 150 ms). **iOS fallback:** vibrate is a no-op there, so every pattern also drives a screen shake: tick 2 px for one frame, thud 3 px for three, tone 4 px decaying over the pattern's length. **Queue rules:** one one-shot pattern at a time; never two starts within 60 ms; a lower-priority one-shot arriving during a higher one is *dropped, never delayed*; equal priority, newest wins; SHOT throttled to 8/s. **Loops** (marked L) are background: priority 0 while running, so any one-shot interrupts them and the loop resumes after; only one loop runs at a time and the newest replaces the previous (CHASE_STEP replaces HEARTBEAT during extraction; BRACE_LOOP replaces BARRICADE_CRITICAL while held), which resumes if its condition still holds; UI_TICK is suppressed while HEARTBEAT runs. Priority 5 is highest. No vibrate call before the first Title tap.
+
+| Name | Array (ms) | Pri | Fires when |
+|---|---|---|---|
+| UI_TICK | [10] | 1 | Any button; each floor crossed while dragging; Cease-Fire off |
+| ASSIGN_SNAP | [12, 30, 12] | 2 | Survivor dropped into a room |
+| CONFIRM | [20, 40, 30] | 2 | Build, upgrade, craft, repair, cure ordered; Cease-Fire on |
+| DENY | [60, 30, 60] | 2 | Cannot afford; invalid drop; no bunk; pack full; a refusal or walk-out line; Ammo hits 10 |
+| RESOURCE_TICK | [6] | 1 | Each Dawn Report or Scav Result line reveals |
+| RATCHET | [8, 40, 8, 40, 8] | 1 | Tower scroll rubber-band; slider detents |
+| DUSK_HINGE | [30, 300, 60]; Blood Moon and Beacon nights [60, 300, 120] | 2 | The warm→cold crossfade at NIGHT |
+| UNLOCK | [20, 60, 20, 60, 120] | 3 | Legacy purchase; streak flame +1; zone unlocked; act card |
+| DOOR_SLAM | [70] | 3 | Entering a zone |
+| SEARCH_LOOP | [10, 90] L | 0 | Container search bar filling |
+| LOOT_COMMON | [15] | 2 | Item lands in the pack |
+| LOOT_RARE | [15, 40, 15, 40, 90] | 3 | Gear, kit or rare lands; stealth kill |
+| NOISE_RING | [25] | 2 | Attention crosses a multiple of 10 |
+| HAZARD | [30, 60, 30, 60, 90] | 3 | Hazard triggered; a sleeper wakes |
+| FOOTSTEPS_BEHIND | [30, 300, 30, 300, 30] | 4 | A wave spawns behind the survivor; 0.5 s before each extraction roll |
+| EXTRACT_START | [15, 40, 15] | 3 | Swipe-left accepted |
+| CHASE_STEP | [10] every 250 ms → 120 ms L | 0 | Extraction run; interval shortens with Attention |
+| EXTRACT_HOME | [20, 100, 20, 100, 60, 100, 120] | 4 | Survivor reaches screen 0 |
+| HEARTBEAT | [40, 400, 40, 400] → gap shrinks to 150 L | 0 | Attention ≥ 66 in the zone |
+| HORDE_INCOMING | [40, 80, 40, 80, 120] | 4 | Each siege wave starts (3 s early for a Light Sleeper) |
+| SHOT | [15] | 1 | Pistol or Rifle shot (max 8/s) |
+| SHOTGUN | [40, 20, 20] | 2 | Shotgun blast |
+| MELEE_HIT | [25] | 1 | Any melee swing connects, gate or zone |
+| FOCUS_LOCK | [15, 25, 15] | 3 | Focus Fire target acquired |
+| KILL_STOP | [8] | 2 | Focus kill (with the 60 ms hit-stop); a dodged strike |
+| THROW | [12] | 1 | Throwable released |
+| MOLOTOV_IGNITE | [40, 30, 40] | 3 | Molotov lane ignites |
+| PIPE_BOMB | [120, 40, 60] | 4 | Pipe Bomb detonates |
+| FLARE | [20, 60, 20] | 2 | Flare lands |
+| BARRICADE_HIT | [40] → [70] below 30 % | 2 | Zombie hits the gate |
+| PLANK_LOST | [60, 40, 30] | 3 | Each 20 % of barricade lost |
+| BRACE_LOOP | [8, 180] L | 0 | Brace held (repair ticking) |
+| BRUTE_SLAM | [80, 60, 80] | 4 | Brute hits the gate or the Bracer |
+| ROAR | [250] | 4 | Brute roar window opens |
+| BRUTE_DOWN | [90, 50, 150] | 4 | Brute dies (with the 200 ms hit-stop) |
+| SCREAM | [200, 50, 200, 50, 400] | 4 | Screamer screams; infection ring crosses 12 h left |
+| BLOATER_POP | [60, 20, 20, 20, 20, 20, 20] | 4 | Cloud released |
+| FAMILIAR_FACE | [60, 200, 60, 200, 300] | 4 | A Familiar Face steps onto the street |
+| SURVIVOR_HIT | [40] | 2 | A survivor takes damage (runner, Bracer, melee exchange, Breach); also a hidden or Immune bite |
+| WOUND | [45, 40, 100] | 3 | Bleed inflicted |
+| AMMO_OUT | [50, 50, 50, 50, 50] | 3 | Ammo reaches 0 in a siege |
+| BARRICADE_CRITICAL | [20, 80, 20, 120, 20, 60] L | 0 | Barricade < 25 % |
+| BREACH | [150, 80, 150, 80, 200] | 5 | Barricade reaches 0 |
+| BITE | [90, 40, 200] | 5 | A bite becomes known: visible ring, notice, confession, Check |
+| TURN | [300, 100, 300, 100, 600] | 5 | Infection clock hits 0 |
+| DEATH | [500] then 2 s silence | 5 | Permadeath |
+| KNOCK | [50, 100, 50, 100, 50] | 3 | Recruit or stranger at the gate at dawn |
+| SIEGE_WON | [30, 200, 50, 200, 80] | 4 | Last zombie down or dawn with survivors |
+| SHUTTER | [10, 30, 60] | 2 | Share card rendered |
+| BEACON_LIT | [50, 100, 50, 100, 50, 100, 50, 100, 800]; half length at each countdown night's first wave | 5 | Beacon countdown starts |
+| EVACUATION | [100, 200, 100, 200, 100, 200, 1000] | 5 | Win |
+
+## 13. Visual Direction
+
+**Look:** every sprite is generated at load from part libraries and drawn at 1× into a 240 × H buffer, `H = ceil(240 × screenAspect)` clamped to 426–540 (9:16 through 20:9; floors 240×64, tower and street backgrounds extend vertically to fill; survivors and zombies 16×24; portraits 24×24; props from rectangles, lines and dither), upscaled nearest-neighbour by the largest integer factor that fits the width in device pixels (`devicePixelRatio`), centred with 16 px gutters, then lit and post-processed at device resolution in one WebGL chain: (1) a 2D light map of additive radial lights — one per room tinted by function (Kitchen amber, Infirmary green-white, Generator strobing amber, Radio blinking red), two-frame muzzle flashes, animated Molotov pools, a one-pixel cyan moon rim on the horde; (2) bloom on emissives only (lamps, flashes, fire, the beacon); (3) tilt-shift blur growing with distance from the focal band (the touched floor, the gate, the survivor's row); (4) a filmic S-curve with blacks lifted to `#14121a`, lerped between four grade presets by the clock; (5) 3 % animated grain, 5 % at night; (6) a vignette that tightens as barricade HP drops. No normal maps, no chromatic aberration. Chunky pixels under smooth light is the HD-2D read. The HUD and the context button are DOM, inset by `env(safe-area-inset-*)`. All text uses a 5×7 bitmap font defined in code (96 glyphs), so no font file ships and cards look identical on every device. **Without WebGL2** the scene canvas is shown directly with the grade as a CSS filter: no bloom, tilt-shift or grain, same game.
+
+**Palette (fixed, 16 colours for all sprites; lighting is continuous colour on top):** ink `#14121a`, slate `#2b2a33`, concrete `#5c5a57`, rust `#7a3b2e`, wood `#8a5a3c`, bone `#d9c9a3`, sand `#d9b27a`, amber `#ffb347`, ember `#ff6a1a`, blood `#8b1a1a`, rot `#6fbf73`, moss `#3b4a3a`, cold sky `#2e4a6b`, moon `#8fd3e8`, violet `#5a3e6e`, paper `#f2ead7`.
+
+**Grades:** four clock presets, lerped so the whole tower changes mood without a sprite changing — *Dawn* (rose-grey key from the left, long blue shadows, the tower the only warm object), *Day* (amber through the tower's holes, cool shadow on the right wall, Kitchen and Cistern floors greener), *Dusk* (amber rim on the tower, violet shadows, street cold cyan; lamps flicker on room by room with a UI_TICK each; the 2-second warm→cold crossfade is the day's emotional hinge), *Siege* (one flickering sodium lamp, muzzle flashes as the main light, moon rim on the horde) — plus *Breach* as an override (near-monochrome with red preserved) and per-scene zone overrides (Hospital sick-green fluorescents, Forest dappled cyan, Depot red strobe, Mall neutral) over a three-layer parallax (fence, buildings, sky) and fog planes.
+
+**State through light, not HUD:** Power deficit dims rooms from the roof down; lost planks let street light spill onto Floor 0; the infection ring glows rot-green with a dashed outline and the Heat ring carries its number, so neither depends on colour alone.
+
+**Feel:** 60 ms hit-stop on any Focus-Fire kill; 200 ms and a 6 px shake on a Brute death; 2 px shake per Brute swing; a slow 0.5° roll while a Screamer lives. Smooth-damped portrait camera with 16 px gutters. **Reduce motion** disables shakes, the roll and tilt-shift and shortens every transition to a 120 ms cut; hit-stops stay.
+
+**Platform:** an installable PWA — manifest with `display: standalone` and `orientation: portrait`, a service worker that precaches the single bundle so it boots offline; IndexedDB save (localStorage fallback) with a `SAVE_VERSION` and forward migrations; 60 fps with the full post chain at 3× integer scale on a 2020 mid-range Android; `visibilitychange` pauses the sim (§2); no vibrate call before the Title tap, because Android Chrome ignores it.
+
+## 14. Scope Guard
+
+**Non-negotiable:** the Hold with Gate, Radio and eight buildable rooms at three tiers; four stats, two traits, portraits and logs; dayNoise → Heat → horde size and zone Attention; the infection clock with hidden bites, Put Down and Exile; the siege with its four verbs, five zombie types, ranged weapons, composition table, Noise meter and survivable Breach; scav runs with non-decaying Attention, waves behind you and the swipe-left run home; permadeath and the obituary card; the Dawn Report order, the boundary order and the context button; autosave at every phase boundary and the 1 s mid-phase snapshot; the haptic table with its queue and iOS shake fallback; the WebGL post chain (without it the pitch is wrong); the dusk crossfade; the seed and its named streams on every card.
+
+**Cut in this order if over budget:**
+1. Night Sortie and Second Runner (unlocks 9–10).
+2. Zone modifiers and the Named Brute (keep the act cards as text).
+3. Mutators beyond *Dry Season* and *Fast Ones*.
+4. Legacy unlocks 7–8.
+5. Events 15, 17, 18 (keep 15 events).
+6. Daily Challenge and its card.
+7. Familiar Faces from scav deaths (keep the Exile return).
+8. Hypochondriac and the Check action.
+9. Military Depot (the Rifle becomes a Mall rare).
+10. Watchtower horde preview and *Voice on the Air*'s *Listen only*.
+11. Adjacent-room synergy.
+12. Long-press drag (fall back to tap survivor, tap room).
+13. The extraction dodge tap (keep the warning).
+14. Tilt-shift pass (keep light map, bloom, grade, grain).
+15. The Wall render (keep the death log).
+
+**Never cut:** the haptic vocabulary (300 lines, and it is the audio), the Dawn Report order, the seed on every card, infection timers, permadeath, the obituary card. Ship fewer systems at 100 % rather than every system at 80 %.

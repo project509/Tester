@@ -9,10 +9,11 @@ Companion to `ARCHITECTURE.md` (engine contracts) and `GDD.md` (rules + numbers)
 2. **Text**: DOM UI uses the system font stack (theme.css). The 5×7 bitmap font (`art/font.js`) is used for in-scene labels, the siege/scav in-canvas HUD accents and share cards (so cards are identical everywhere).
 3. **Chromatic aberration** exists in postfx but defaults to 0 in all grades; it is pulsed briefly (0.6) only on BREACH and on the survivor-death grey-out.
 4. **Time**: turn-based per the GDD (timers advance 12 h at each Dawn and Dusk boundary). There is no offline simulation (`game/offline.js` is dropped). A cosmetic clock drives the sky: during the Day phase the visual hour eases from 06:00 to 17:30 over the first 4 real minutes of the phase, Dusk Prep sits at 18:30, Siege runs 21:00→05:00 over its duration, Dawn Report shows 06:00.
-5. **Live segments are not persisted.** If the app is killed mid-Siege or mid-Scav, the segment restarts from its beginning on resume (same seed → same layout). `G.siege`/`G.scav` hold only the *plan* needed to restart.
+5. **Live segments are not persisted** (overrides GDD §2 "snapshots every 1 s"): if the app is killed mid-Siege or mid-Scav, the segment restarts from its beginning on resume with the same seed (same horde / same zone layout, so a force-quit is not a reroll of the layout). `G.siege`/`G.scav` hold only the *plan* needed to restart. On `app:hidden` the loop pauses and a RESUME overlay counts down 1 s on return. Storage is localStorage (no IndexedDB).
 6. **Settings** live in `meta` (persist across runs), not in `G`.
 7. **Haptics**: game code uses the GDD §12 names (`UI_TICK`, `BREACH`, …). `core/haptics.js` `VOCABULARY` must contain every GDD name (add them as aliases/patterns; keep the existing lowercase set). Owner: the `game-director` implementer adds them.
-8. **Share cards** are 1080×1350 (4:5, the group-chat thumbnail sweet spot) instead of 1080×1920; obituary/run/daily kinds per GDD §9.
+8. **Share cards** are 1080×1350 (4:5, the group-chat thumbnail sweet spot) instead of 1080×1920; obituary/run/daily kinds per GDD §9. The last 20 cards' data is kept in `meta.cards`.
+9. **Everything in the GDD ships** — including the Scope Guard's optional items (Second Runner, Night Sortie, zone modifiers, the Named Brute, act cards, the extraction dodge tap, tilt-shift, the Wall render). Nothing is cut.
 
 ## 2. Game flow (state machine)
 
@@ -134,3 +135,64 @@ Rules per GDD §6 (search time, crouch, attack, sprint +2/s attention, extractio
 
 ## 8. main.js (integrator) responsibilities
 Create stage/camera/lights/particles/input/tweens; register scenes; load meta + save; apply settings; wire input → `scenes.dispatch`; loop: update (tweens, camera, lights, particles, director, scenes) / render (stage.begin, scenes.draw, stage.end(postParams)); register the service worker (`navigator.serviceWorker.register('sw.js')` guarded, only on http(s)); expose `window.HOLDOUT`; global error guard (log once, `ui.toast` in dev); handle `app:hidden` → autosave.
+
+## 9. Addendum — final GDD reconciliation (binding; supersedes §2–§6 where they differ)
+
+The GDD was revised after §2–§6 were written. These rules are final. `balance.js` already carries the numbers (`B.START.prebuilt`, `B.HORDE.composition`, `B.ZONE_MODS`, `B.SIEGE.*`, `B.SCAV.extract.*`, `B.LEGACY.unlocks` (10), `B.DRAMA`, `B.RNG_STREAMS`, …).
+
+### 9.1 Flow & boundaries
+- **Start of run:** Kitchen T1 pre-built on floor 1 (Tinker: Workshop T1 on floor 2), Scrap 40, Radio slot empty (`floors[7].room = { type:'radio', tier:0 }`, buildable any time). Roster Draft shows **6** survivors, the player picks **4**, one REROLL of all six (`rng.fork('rosterReroll')`). Owned unlocks are toggle chips (`G.unlocksOn: [ids]`, default all owned; the Daily runs with none).
+- **Build rule:** the Build Menu opens only from the **lowest empty floor** (floors 1–6); Radio is independent.
+- **Dusk order** (director.resolveDusk): 1 +12 h · 2 infection (pending cure rolls, clock ticks, turns) · 3 power budget from staffing (draw-0 rooms never cut) · 4 production (with yesterday's shortage stat penalties; runner's room ×0.5; Quiet Night ×1.25; Storm → Kitchen 0) · 5 consumption + shortage flags · 6 Bleed · 7 Infirmary healing (needs ≥ 1 worker; `tierBase × (0.7 + 0.06 × best worker Hands)`, Medic ×1.5, unpowered ×0.5) · 8 Morale (Bunks, +2 fed, −3 drift while > 50, trait dailies, −2/day over cap) · 9 Beacon power check · 10 autosave → Dusk Prep. Storm Night: the context button reads SLEEP, no siege, barricade −40, dayNoise 0, the night counts as played.
+- **Dawn order** (director.resolveDawn): 1 +12 h · 2 siege results (deaths → Wall, obituaries queued, `floor(peakNoise/25)` + 1 per surviving Brute/Bloater into dayNoise, `round(0.25 × leftovers)` carried into tomorrow's base as Shamblers) · 3 infection (ticks, turns, Hypochondriac 20 %, notices 60 % at Nerve ≥ 6 / 100 % at ≥ 8, confessions at ≥ 50 % of the clock) · 4 Bleed, then +5 regen · 5 Morale (+5 clean night: no breach/death/known bite; −5 survived badly; Familiar ±6; −10 per death; over-cap −2) · 6 refusal (< 30) and walk-out (< 10) rolls · 7 `heat = min(20, round(0.6 × (heat + dayNoise)))` (Loud World 0.8; a Blood Moon dawn keeps 100 %), then dayNoise = 0 · 8 roster-cap check, zone unlock · 9 event: chained Fire pre-empts; else weighted roll with 3-day cooldowns (`rng.fork('event:'+day)`); else *Quiet Morning* filler · 10 autosave → Dawn Report. Act cards at Dawn 10 (**PRESSURE**: reveals both Blood Moon nights and names the Brute) and Dawn 20 (**BEACON**).
+- **End of run:** roster 0 → 2 s hold → Run Summary directly (no Dawn Report). Evacuation dawn → Run Summary. Marks credited, `meta.runs` appended, run save deleted at the moment the Summary shows. NEW RUN over a live save asks once and records FELL.
+- **Blood Moons** are seeded per run (`rng.fork('bloodMoon')`): first on Night 18–24, second 5–7 nights later → `G.bloodMoons: [n1, n2]`. The first is led by the **Named Brute** (120 HP, `G.namedBrute: { name, alive:true, night }`; +10 Morale and a drama-8 log line for the killer; if alive at dawn it leads the second).
+- **RNG streams** (GDD §8): `roster`, `rosterReroll`, `zoneMods`, `bloodMoon`, per day `zone:{day}`, `containers:{day}:{screen}`, `event:{day}`, `eventReroll:{day}`, `horde:{day}`, `siege:{day}`, `scav:{day}` (`scav:{day}:2` for the Second Runner). `makeRng(G.seedNum).fork(label)`.
+
+### 9.2 State additions
+```js
+G.unlocksOn: [id], G.bloodMoons: [n1, n2], G.namedBrute: null|{ name, alive, night }, G.carryOver: 0 /* shamblers added to tomorrow's base */,
+G.zoneMods: { suburbs:'evacuated', mall:'burned', ... } /* one per zone per run */, G.acts: { pressure:false, beacon:false },
+G.dayFlags += { runnerIds:[], secondRun:false, absent:[], quarantine:null|id, wantZone:null|zoneId, storm:false, quietNight:false, broadcastDone:false, rerollDone:false, traderOffer:null|{day} },
+G.obituaryQueue: [ { snapshot, death } ]  /* shown one at a time before the Dawn Report / Summary */,
+Survivor += { role:'worker'|'patient'|'idle', treatment: null|{ startedHours, medsPaid, tier:'early'|'late' } /* pending cure roll */, baseGrit }
+Room.spent: number  /* total scrap ever spent, for the 50 % demolish refund */
+meta += { cards: [ { kind, data, date } ] /* last 20 */, tutorialDone:false, lastSeenStreak:0 }, meta.fallen cap 50
+```
+`inventory` is the **Stash** (unbounded: unequipped weapons, armor, throwables, kits).
+
+### 9.3 Survivors
+- `hpMax = 20 + baseGrit × 8` (base, before trait/shortage deltas). Trait pairs exclude Loud/Quiet, Proud/Hypochondriac, Coward/Faithful, Steady Hands/Scrounger. Grudge picks a rival at generation (`rival` id; trait rerolled if no other survivor).
+- Infection clock: 48 h; Long Fuse 72; Immune 96; both 144 (`bite.maxHours`). CURE (sheet; Infirmary T2, or T1 with a Medic worker; powered): survivor becomes a patient, Meds paid now: ≤ 50 % of clock → 3 Meds, always works; > 50 % → 6 Meds at 50 % (`treatment` pending; resolves in the infection step of the next boundary, before the turn check; Fever Dream ×0.6). Turn: roommate 30 HP + 50 % bite (same room; idle survivors share the Gate yard); highest-Aim puts them down with 1 Ammo, or bare-handed at Ammo 0 with a 10 % bite on the putter. Immune bites are hidden for the first 48 h. BITE haptic only when a bite becomes *known*; a hidden bite fires SURVIVOR_HIT.
+- Bleed is inflicted by any hit ≥ 10 HP at 25 %, a Brute swing on the Bracer 40 %, a Breach attack 20 %, an extraction strike 25 %. BANDAGE (1 Med, sheet, instant).
+- Patient = assignment (`role:'patient'`, `roomId` = Infirmary). MAKE PATIENT / CURE on the sheet; dragging a patient out ends patient status (DENY while a cure is pending).
+- Recruits: 20 % hidden bite. Rescue chance per zone (`B.ZONES[z].rescue`, Hunting Season 0.4). Over cap: no recruiting (DENY "no bunk"), −2 Morale/day.
+
+### 9.4 Siege
+- Ranges: Pistol 0.5, Shotgun 0.3 (2 targets within 0.10), Rifle 1.0; Watchtower slot +0.20 (powered). `accuracy = clamp(0.45 + 0.05×aim + towerBonus, 0.55, 0.95)`; Armory damage bonus only while powered.
+- Melee at Ammo 0: `4 + grit/2` per 1.5 s at the gate line (MELEE_HIT); the engaged zombie strikes the defender instead of the wall every 1.5 s: 6 HP, 5 % bite (SURVIVOR_HIT). AMMO_OUT when Ammo hits 0; the HUD count reddens ≤ 10.
+- Composition per `B.HORDE.composition` band (round(share × base), minimums, remainder Shamblers); heat zombies 50 % newest type / 50 % Shamblers (Runners for the heat half at Heat ≥ 3 before Night 12). Placement: Screamers wave 1; Brutes/Bloaters split across waves 2–3; Familiar Faces in wave 1 (FAMILIAR_FACE). Spawn stagger 0.4 s (0.25 s Blood Moon). Carry-over Shamblers from `G.carryOver`.
+- Brace: 4 HP/s, capped at 40 % of max HP per night (`S.braceBudget`), BRACE_LOOP; a Runner at the wall strikes a *held* Bracer every 1.0 s (8 HP, 15 % bite) else the barricade; a Brute swing on a held Bracer: 10 HP, Bleed 40 %, cancels the hold, locks Brace 2 s (BRUTE_SLAM).
+- Screamer stops at 0.55 (only Rifle range or Watchtower Pistol reaches it). Bloater cloud is 0.08 of the street wide at its contact point. Molotov lane 0.15 wide. Pipe Bomb radius 0.12 (inside a Breach also 20 HP to survivors in radius). Molotov inside a Breach is refused (DENY).
+- Hard dawn: leftovers drift off; SIEGE_WON still fires if anyone lives; result carries `leftovers` and `bigLeftovers` for the dawn step.
+- **Night Sortie** (unlock): `plan.sortie: id|null` — a melee survivor standing at x = 0.08 who engages zombies (the exchange above) before they reach the wall; tapping them pulls them inside (`input.recallSortie`).
+- Named Brute: `Z.named = true`, hp 120, leads wave 1 on its Blood Moon.
+
+### 9.5 Scav
+- Runner carries: equipped weapon/armor, **10 Ammo from stock** (unused returns; `R.ammo`), up to 2 throwables from the Stash (`plan.throwables`), a Medic 3 Meds (one field cure). Second Runner: `director.sendRunners([{id, zoneId}, {id, zoneId}])` plays the runs back to back.
+- Zone modifier: one per zone per run from `G.zoneMods` (`B.ZONE_MODS`), printed on the zone card and applied in `createRun`.
+- New verbs: **stealth kill** (crouched melee tap on a sleeper: instant, silent, LOOT_RARE); **swipe up → throw** a carried throwable (siege rules; Molotov Attention +10, Pipe Bomb +25, Flare pulls the screen's zombies). Hazards: crouching over a weak floor avoids it and halves an alarm/dog. HAZARD haptic on a sleeper waking.
+- Pack full: the item sits in a 3 s "drop to swap" tray (`R.swapTray`), tap a pack slot to swap, else discarded (DENY).
+- Extraction: FOOTSTEPS_BEHIND 0.5 s before each roll; a tap within `250 + 20×nerve` ms of the strike dodges it (KILL_STOP; `input.dodgeTap`), a mistimed tap +1 Attention; a landed strike: hit `0.5 − 0.04×grit`, 12 HP, 15 % bite, 25 % Bleed. Death: dayNoise +2 flat.
+- Loot rolls: Locker Ammo ×12; gear weights Bat 30 / Pistol 30 / Vest 25 / Machete 10 / Shotgun 5 (Mall 15) / Rifle 0 (Depot 15); throwables Molotov 60 / Flare 25 / Pipe Bomb 15 (Depot 40).
+
+### 9.6 Events & narrative
+- Weights: default 10; Knock 15, Want 6, Storm 8, Ghost 4; 3-day cooldown per event; Quiet Morning filler. Event 6 is **Voice on the Air**. Old Grudge *Separate* −6. Rationing *Strip the garden* destroys a T1 Kitchen. Mercy triggers past 75 % of the clock; *Wait* −3 (+5 instead if a Faithful lives). Fever Dream: cure roll ×0.6. Trader lives as a TRADE button on the Radio sheet for 2 days.
+- Drama weights (`B.DRAMA`) tag every log line (`{ day, text, drama }`); obituary cards show the top 3 by drama then recency; the Defining Moment is the run's highest-drama line.
+
+### 9.7 Progression & UI
+- Unlocks 9 **Second Runner** (70) and 10 **Night Sortie** (80). Daily: seed from the UTC date, unlocks off, weekday mutators per `B.LEGACY.dailyMutatorsByWeekday`, no ×10 win bonus, counts for the streak. Streak: local calendar days with a 6 h grace past midnight; UNLOCK haptic per new flame; Title shows the flame going out when a streak was lost.
+- Dusk Prep is **auto-filled** (two highest-Aim → Gate, third → Watchtower, highest-Hands non-defender → Bracer, three throwables from the Stash); drag/tap to change. Context button variants: SLEEP (storm), HOLD (3)/HOLD (2)/LAST NIGHT (beacon), HOLD THE DOOR (breached start).
+- Obituary cards queue (`G.obituaryQueue`), NEXT advances, the last NEXT continues to the Dawn Report or the Summary. Legacy shows the ten-unlock grid, last 20 cards (re-render + share), the Wall of past dead (50).
+- Settings: haptic intensity 0–1.5 (0 = shake-only), reduce motion, seed display, replay tutorial (clears `meta.tutorialDone`), delete run save, reset Legacy (double confirm), export/import save code.
+- Onboarding (first run only, gated by `meta.tutorialDone`): repair slider stops at 80/100 (4 Scrap) → drag first survivor to the Kitchen → tap Floor 2, build Bunks → SEND (Suburbs Near, 4 screens) → first container → "swipe left to run home" when the first wave spawns → HOLD THE GATE (7 Shamblers) → "tap the one at the wall" → Dawn Report: the Knock.
