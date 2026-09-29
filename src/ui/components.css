@@ -978,8 +978,9 @@
 
 .stat-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
-/* 3-up columns are ~100 px wide: tighter padding and labels may wrap to two lines */
+/* 3-up columns are ~100 px wide: tighter padding, no label icon, labels may wrap to two lines */
 .stat-grid--3 .stat { padding: 10px 8px; }
+.stat-grid--3 .stat__label .icon { display: none; }
 
 .stat-grid--3 .stat__label {
   display: -webkit-box;

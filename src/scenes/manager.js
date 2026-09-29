@@ -35,13 +35,6 @@ const HANDLERS = {
   hold: 'onHold',
 };
 
-/** Handlers that end a gesture; delivered while busy, but only to the scene that owns the gesture. */
-const TERMINAL_HANDLERS = new Set(['onUp', 'onDragEnd', 'onCancel']);
-/** Handlers that end the pointer contact (the gesture owner is released afterwards). */
-const RELEASE_HANDLERS = new Set(['onUp', 'onCancel']);
-/** Handlers that start a gesture (the live scene becomes its owner). */
-const START_HANDLERS = new Set(['onDown', 'onDragStart']);
-
 /** Every key of the postfx params contract, so the merged object keeps one fixed shape. */
 const POSTFX_KEYS = [
   'exposure', 'contrast', 'saturation', 'warmth', 'tint', 'bloom', 'bloomThreshold',
@@ -152,10 +145,12 @@ export function createScenes() {
   let viewW = 0;
   let viewH = 0;
 
-  /** Scene that owns the pointer gesture in progress (null while busy or when none). */
+  /** Scene that owns the gesture in progress (null when it started while busy, or when none). */
   let gestureOwner = null;
-  /** True between a 'down'/'dragstart' and the matching 'up'/'cancel'. */
-  let gestureLive = false;
+  /** True between a 'down' and the matching 'up'/'cancel'. */
+  let contactLive = false;
+  /** True between a 'dragstart' and its 'dragend' when the host wires no 'down' (drag-only wiring). */
+  let dragLive = false;
 
   /** Reused outputs — never allocated per frame; mergedParams keeps a fixed shape (assign, never delete). */
   const mergedParams = {};
@@ -535,22 +530,46 @@ export function createScenes() {
 
   /** Tracks gesture ownership for `method`; returns whether the live scene may receive it now. */
   function routeGesture(method) {
-    if (START_HANDLERS.has(method)) {
-      // Every gesture start (re)claims ownership, so a host that wires only
-      // drag events (no 'up') can never leave a stale owner behind after a swap.
-      gestureLive = true;
-      gestureOwner = tr ? null : current;
-      return tr === null;
-    }
-    if (TERMINAL_HANDLERS.has(method)) {
-      const allowed = gestureLive ? gestureOwner === current : tr === null;
-      if (RELEASE_HANDLERS.has(method)) {
-        gestureLive = false;
-        gestureOwner = null;
+    const idle = tr === null;
+    switch (method) {
+      case 'onDown':
+        contactLive = true;
+        gestureOwner = idle ? current : null;
+        return idle;
+      case 'onDragStart':
+        // A drag inside a live contact keeps the contact's owner; without one
+        // (drag-only wiring) the drag is the gesture and claims ownership itself.
+        if (!contactLive) {
+          dragLive = true;
+          gestureOwner = idle ? current : null;
+        }
+        return idle;
+      case 'onDragEnd': {
+        const allowed = terminalAllowed(idle);
+        if (!contactLive) releaseGesture();
+        return allowed;
       }
-      return allowed;
+      case 'onUp':
+      case 'onCancel': {
+        const allowed = terminalAllowed(idle);
+        releaseGesture();
+        return allowed;
+      }
+      default:
+        return idle;
     }
-    return tr === null;
+  }
+
+  /** A gesture-ending event goes to its owner; with no tracked gesture it follows the idle rule. */
+  function terminalAllowed(idle) {
+    return contactLive || dragLive ? gestureOwner === current : idle;
+  }
+
+  /** Forgets the tracked gesture (pointer lifted, cancelled, or drag-only gesture ended). */
+  function releaseGesture() {
+    contactLive = false;
+    dragLive = false;
+    gestureOwner = null;
   }
 
   /**
