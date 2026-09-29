@@ -15,6 +15,8 @@ const REDUCED_MOTION_MAX_DUR_MS = 250;
 /** Soft rim of the iris hole, in css px. */
 const IRIS_FEATHER_PX = 18;
 const MAX_CLOCK_STEP_SEC = 0.1;
+/** Consecutive tick(0) calls during a live transition before tick() self-measures wall time instead. */
+const ZERO_TICKS_BEFORE_WALL_FALLBACK = 3;
 const MAX_LOGGED_ERRORS = 64;
 
 /** Maps dispatch() event names to scene handler method names. */
@@ -141,8 +143,10 @@ export function createScenes() {
   let tickedThisFrame = false;
   /** Seconds update() has advanced the transition since the last draw() (avoids a double step when tick() takes over). */
   let simAdvanced = 0;
-  /** performance.now() of the previous self-measured tick(); 0 = unknown. */
+  /** performance.now() of the previous tick(); 0 = unknown. */
   let lastTickMs = 0;
+  /** Consecutive explicit tick(0) calls seen while a transition is live. */
+  let zeroTicks = 0;
 
   /** Viewport in css px, cached from resize(); used when draw() is called without W/H. */
   let viewW = 0;
@@ -366,7 +370,7 @@ export function createScenes() {
     }
   }
 
-  /** Wall-clock seconds since the previous self-measured tick(), clamped; 0 on the first call. */
+  /** Wall-clock seconds since the previous tick(), clamped; 0 on the first call. */
   function wallStep() {
     const now = nowMs();
     const step = lastTickMs > 0 ? Math.min(Math.max(0, (now - lastTickMs) / 1000), MAX_CLOCK_STEP_SEC) : 0;
@@ -379,11 +383,21 @@ export function createScenes() {
    * simulation can pause or run at a different speed: call it once per
    * rendered frame (`render: () => scenes.tick()`), never with the loop's
    * scaled dt. With no argument the step is measured from performance.now().
+   * An explicit step of 0 repeated for several frames while a transition is
+   * live (a paused host passing its scaled dt) falls back to wall time, so a
+   * fade can never freeze the screen.
    * @param {number} [realDt] unscaled seconds since the previous frame (tests / loop.rawDt)
    */
   function tick(realDt) {
+    const wall = wallStep();
     const explicit = typeof realDt === 'number' && Number.isFinite(realDt) && realDt >= 0;
-    const step = explicit ? realDt : wallStep();
+    let step = explicit ? realDt : wall;
+    if (explicit && tr !== null && realDt === 0) {
+      zeroTicks++;
+      if (zeroTicks > ZERO_TICKS_BEFORE_WALL_FALLBACK) step = wall;
+    } else {
+      zeroTicks = 0;
+    }
     tickedThisFrame = true;
     advance(Math.max(0, step - simAdvanced));
     simAdvanced = 0;
@@ -522,11 +536,10 @@ export function createScenes() {
   /** Tracks gesture ownership for `method`; returns whether the live scene may receive it now. */
   function routeGesture(method) {
     if (START_HANDLERS.has(method)) {
-      // 'down' always (re)claims the gesture; 'dragstart' only when no contact is tracked.
-      if (method === 'onDown' || !gestureLive) {
-        gestureLive = true;
-        gestureOwner = tr ? null : current;
-      }
+      // Every gesture start (re)claims ownership, so a host that wires only
+      // drag events (no 'up') can never leave a stale owner behind after a swap.
+      gestureLive = true;
+      gestureOwner = tr ? null : current;
       return tr === null;
     }
     if (TERMINAL_HANDLERS.has(method)) {

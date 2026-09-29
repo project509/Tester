@@ -1,0 +1,361 @@
+/* ui/theme.css — HOLDOUT design system tokens.
+ * Responsibility: every colour, spacing, radius, shadow, z-index, duration and
+ * typography rule the DOM UI is built from, plus the #ui reset and text utilities.
+ * "Field terminal meets survivor's journal": near-black blue-gray glass panels,
+ * amber for action, steel-blue for information, red for danger, green for ok.
+ * Component styling lives in components.css; canvas layout lives in styles.css.
+ * Hooks (toggled by the integrator, mirrored by media queries):
+ *   body.low-fx          no backdrop blur — stage.setQuality('medium'|'low') MUST set it, the
+ *                        blur re-samples the live canvas every frame (also: prefers-reduced-transparency)
+ *   body.reduced-motion  1 ms transitions/animations, no press scaling — G.settings.reducedMotion
+ *                        (also: prefers-reduced-motion; the damage flash keeps a short fade in both) */
+
+:root {
+  /* Surfaces */
+  --c-bg: #0b0d12;
+  --c-panel: #12151d;
+  --c-panel-2: #181c27;
+  --c-panel-3: #1f2432;
+  --c-line: #262b38;
+  --c-line-2: #343a4b;
+  --c-glass: rgba(18, 21, 29, 0.84);
+  --c-glass-2: rgba(24, 28, 39, 0.9);
+  --c-backdrop: rgba(4, 6, 10, 0.62);
+
+  /* Ink */
+  --c-text: #e8ebf2;
+  --c-text-2: #a2abbd;
+  --c-text-3: #66708a;
+  --c-ink: #17110a;
+
+  /* Accents */
+  --c-amber: #ffb15c;
+  --c-amber-2: #e0903b;
+  --c-amber-dim: rgba(255, 177, 92, 0.16);
+  --c-blue: #8fb3ff;
+  --c-blue-dim: rgba(143, 179, 255, 0.16);
+  --c-red: #ff5a4e;
+  --c-red-dim: rgba(255, 90, 78, 0.16);
+  --c-green: #7ed67e;
+  --c-green-dim: rgba(126, 214, 126, 0.16);
+  --c-warn: #ffcf5c;
+  --c-warn-dim: rgba(255, 207, 92, 0.16);
+
+  /* Spacing scale */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  /* Radii */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --r-pill: 999px;
+
+  /* Shadows / glows */
+  --sh-inset: inset 0 1px 0 rgba(255, 255, 255, 0.045), inset 0 0 0 1px rgba(255, 255, 255, 0.015);
+  --sh-panel: 0 8px 24px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.5);
+  --sh-float: 0 18px 48px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.5);
+  --sh-btn: 0 2px 6px rgba(0, 0, 0, 0.35);
+  --glow-amber: 0 0 0 1px rgba(255, 177, 92, 0.35), 0 0 18px rgba(255, 177, 92, 0.22);
+  --glow-blue: 0 0 14px rgba(143, 179, 255, 0.25);
+  --glow-red: 0 0 14px rgba(255, 90, 78, 0.3);
+
+  /* Z-order */
+  --z-hud: 10;
+  --z-panel: 20;
+  --z-banner: 30;
+  --z-sheet: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+  --z-flash: 70;
+
+  /* Motion */
+  --d-press: 80ms;
+  --d-fast: 140ms;
+  --d-med: 220ms;
+  --d-sheet: 260ms;
+  --d-slow: 360ms;
+  --e-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --e-in: cubic-bezier(0.4, 0, 1, 1);
+  --e-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --e-pop: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  /* Typography */
+  --font: -apple-system, 'SF Pro Text', Roboto, 'Segoe UI', system-ui, sans-serif;
+  --fs-xs: 11px;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 17px;
+  --fs-xl: 22px;
+  --fs-2xl: 28px;
+  --track-h: 0.06em;
+
+  /* Safe areas (iOS notch / home bar); overridable by JS if env() is unavailable */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  /* Panel textures */
+  --tex-scan: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.012) 0 1px, transparent 1px 3px);
+  --tex-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 38%);
+  --blur: 8px;
+}
+
+/* ---------- #ui reset ---------- */
+
+#ui {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  line-height: 1.35;
+  color: var(--c-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
+#ui *,
+#ui *::before,
+#ui *::after {
+  box-sizing: border-box;
+}
+
+/* :where() keeps the reset at zero specificity so .btn etc. override it freely */
+:where(#ui) :where(button, input, select, textarea) {
+  font: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+#ui button:focus,
+#ui [tabindex]:focus {
+  outline: none;
+}
+
+#ui button:focus-visible,
+#ui [tabindex]:focus-visible {
+  outline: 2px solid var(--c-blue);
+  outline-offset: 2px;
+}
+
+#ui h1,
+#ui h2,
+#ui h3,
+#ui h4,
+#ui p,
+#ui ul,
+#ui ol,
+#ui figure {
+  margin: 0;
+  padding: 0;
+}
+
+#ui ul,
+#ui ol {
+  list-style: none;
+}
+
+:where(#ui) :where(img, canvas, svg) {
+  display: block;
+  max-width: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  -webkit-user-drag: none;
+}
+
+:where(#ui) a {
+  color: var(--c-blue);
+  text-decoration: none;
+}
+
+:where(#ui) hr {
+  border: 0;
+  height: 1px;
+  background: var(--c-line);
+  margin: var(--sp-3) 0;
+}
+
+/* Anything the player can touch */
+:where(#ui) :where([data-interactive], button, .row, .tabs__tab, .sheet__handle, .toast) {
+  pointer-events: auto;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+/* ---------- Typography utilities ---------- */
+
+.t-heading,
+.t-h1,
+.t-h2,
+.t-h3 {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--track-h);
+  line-height: 1.15;
+}
+
+.t-h1 { font-size: var(--fs-2xl); }
+.t-h2 { font-size: var(--fs-xl); }
+.t-h3 { font-size: var(--fs-md); }
+
+.t-label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--track-h);
+  color: var(--c-text-3);
+}
+
+.t-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+.t-body { font-size: var(--fs-md); color: var(--c-text); }
+.t-sm { font-size: var(--fs-sm); }
+.t-xs { font-size: var(--fs-xs); }
+.t-dim { color: var(--c-text-2); }
+.t-mute { color: var(--c-text-3); }
+.t-amber { color: var(--c-amber); }
+.t-blue { color: var(--c-blue); }
+.t-red { color: var(--c-red); }
+.t-green { color: var(--c-green); }
+.t-warn { color: var(--c-warn); }
+.t-center { text-align: center; }
+.t-right { text-align: right; }
+.t-bold { font-weight: 700; }
+.t-mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+.t-ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-glow-amber { text-shadow: 0 0 12px rgba(255, 177, 92, 0.45); }
+
+/* ---------- Layout utilities ---------- */
+
+.stack { display: flex; flex-direction: column; gap: var(--sp-2); }
+.stack--lg { gap: var(--sp-4); }
+.hstack { display: flex; flex-direction: row; align-items: center; gap: var(--sp-2); }
+.hstack--between { justify-content: space-between; }
+.hstack--wrap { flex-wrap: wrap; }
+.grow { flex: 1 1 auto; min-width: 0; }
+.pad { padding: var(--sp-4); }
+.pad-h { padding-left: var(--sp-4); padding-right: var(--sp-4); }
+.gap-1 { gap: var(--sp-1); }
+.gap-3 { gap: var(--sp-3); }
+.hidden { display: none; }
+.dim { opacity: 0.45; }
+
+/* Momentum scroll regions with hidden scrollbars */
+.scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  pointer-events: auto;
+  touch-action: pan-y;
+}
+
+.scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.scroll-x {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  pointer-events: auto;
+  touch-action: pan-x;
+}
+
+.scroll-x::-webkit-scrollbar { display: none; }
+
+/* Glass surface (shared by panels, sheets, modals, toasts) */
+.glass {
+  background-color: var(--c-glass);
+  background-image: var(--tex-sheen), var(--tex-scan);
+  border: 1px solid var(--c-line);
+  box-shadow: var(--sh-inset), var(--sh-panel);
+}
+
+/* Blur only on the sheet and modal (toasts are small, short-lived and never blurred).
+ * Cost scales with the blurred area and is paid every frame the canvas underneath repaints,
+ * so quality 'medium'/'low' must add body.low-fx. */
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .glass {
+    -webkit-backdrop-filter: blur(var(--blur));
+    backdrop-filter: blur(var(--blur));
+  }
+
+  body.low-fx .glass {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: var(--c-panel);
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .glass {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background-color: var(--c-panel);
+    }
+  }
+}
+
+/* ---------- Reduced motion ----------
+ * Media query and body.reduced-motion carry the same rules (CSS cannot alias a media query
+ * to a class). The flash overlay is opacity-only feedback, not motion: it keeps its fade. */
+
+@media (prefers-reduced-motion: reduce) {
+  #ui *,
+  #ui *::before,
+  #ui *::after {
+    animation-duration: 1ms;
+    animation-iteration-count: 1;
+    transition-duration: 1ms;
+    scroll-behavior: auto;
+  }
+
+  #ui .flash {
+    animation-duration: 200ms;
+  }
+}
+
+body.reduced-motion #ui *,
+body.reduced-motion #ui *::before,
+body.reduced-motion #ui *::after {
+  animation-duration: 1ms;
+  animation-iteration-count: 1;
+  transition-duration: 1ms;
+  scroll-behavior: auto;
+}
+
+body.reduced-motion #ui .flash {
+  animation-duration: 200ms;
+}
